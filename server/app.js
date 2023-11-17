@@ -13,12 +13,13 @@ const connectionString = process.env.DATABASE_URL
 const client = new Client({
     connectionString
   })
-
 const myDatabase = new MyDatabase(client)
+myDatabase.connect()
+
+//Initializing all routes from Router objects
 const getRouter = new GetRouter(myDatabase)
 const postRouter = new PostRouter(myDatabase)
 const putRouter = new PutRouter(myDatabase)
-
 getRouter.initRoutes()
 postRouter.initRoutes()
 putRouter.initRoutes()
@@ -28,15 +29,6 @@ app.use(express.json())
 app.use("/api", getRouter.router)
 app.use("/api", postRouter.router)
 app.use("/api", putRouter.router)
-
-//Setting up test route
-app.get("/test-server", (req, res) => {
-    console.log(req.query)
-    console.log("Received GET request at route /")
-    res.json({
-        message: "Success"
-    })
-})
 
 //Setting up networking port
 const PORT = process.env.port || 8080

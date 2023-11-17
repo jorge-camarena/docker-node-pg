@@ -33,13 +33,18 @@ class PostRouter {
         })
 
         this.router.post('/create-todo', async (req, res) => {
-            console.log(req.body)
-            const todo = await this.database.createTodo(req.body);
-            res.json({
-                todo,
-                message: `Successfully created to-do for user ${req.body.email}`
-            })
-
+            const {todo, error} = await this.database.createTodo(req.body);
+            if (error) {
+                res.status(404).json({
+                    message: `HTTP Error code 404, could not create todo for user ${req.body.email}`,
+                    error: error.cause
+                })
+            } else {
+                res.status(200).json({
+                    todo,
+                    message: `Successfully created todo for user ${req.body.email}`
+                })
+            }
         })
     }   
 }

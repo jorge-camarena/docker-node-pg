@@ -46,7 +46,7 @@ exports.up = pgm => {
           notNull: true,
           references: '"accounts"',
         },
-        owner: {
+        email: {
             type: "varchar(100)",
             notNull: true
         },

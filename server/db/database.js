@@ -7,6 +7,7 @@ class Database {
     };
 
     async connect() {
+        await new Promise(resolve => setTimeout(resolve, 5000))
         var attemps = 10
         while (attemps) {
             try {
@@ -16,18 +17,12 @@ class Database {
             } catch (err) {
                 console.log(err)
                 attemps -= 1
-                console.log(`Attemps remaining: ${attemps}`)
-                //wait 5 seconds
-                await new Promise( res => setTimeout(res, 5000))
+                console.log(`Couldn't connection to DB; Attemps remaining: ${attemps}`)
             }
         }
     };
 
     async createAccount(body) {
-        if (!this.connected) {
-            this.client.connect()
-            this.connected = true
-        }
         const { name, email, password, role} = body
         const accound_id = uuidv4()
         const query = {
@@ -54,99 +49,133 @@ class Database {
     }
 
     async getAccount(params) {
-        if (!this.connected) {
-            this.client.connect()
-            this.connected = true
-        }
         const { email } = params
         const query = {
             text: 'SELECT * FROM accounts WHERE email = $1',
             values: [email]
         }
-        const res = await this.client.query(query)
-        return res.rows[0]
+        var error
+        var account
+        try {
+            const res = await this.client.query(query)
+            account = res.rows[0]
+        } catch(err) {
+            error = new Error(`Couldn't retrieve account for ${email}`,
+            { cause: err })
+            console.log(error)
+            account = {
+                message: `No such user found with email: ${email}`
+            }
+        }
+
+        return { account, error }
     }
 
     async createTodo(body) {
-        if (!this.connected) {
-            this.client.connect()
-            this.connected = true
-        }
         const { email, text, completed} = body
-
+        
+        var error
+        var todo
+        var account_id
         const fetchIDQuery = {
             text: 'SELECT * FROM accounts WHERE email = $1',
             values: [email]
         }
 
-        const data = await this.client.query(fetchIDQuery);
-        console.log(data.rows)
-        const account_id = data.rows[0].id
-
-        const query = {
-            text: 'INSERT INTO todos(id, account_id, owner, body, completed) VALUES ($1, $2, $3, $4, $5)',
-            values: [uuidv4(), account_id, email, text, completed]
+        try {
+            const data = await this.client.query(fetchIDQuery);
+            account_id = data.rows[0].id
+        } catch(err) {
+            error = new Error(`Unable to retrieve account_id for user ${email}`, 
+            {cause: err})
+            console.log(err)
+            todo = {
+                message: 'Could not create Todo'
+            }
+            return { todo, error}
         }
-        const res = await this.client.query(query)
-        return res.rows[0]
+
+        const todoID = uuidv4()
+        const query = {
+            text: 'INSERT INTO todos(id, account_id, email, body, completed) VALUES ($1, $2, $3, $4, $5)',
+            values: [todoID, account_id, email, text, completed]
+        }
+        try {
+            await this.client.query(query)
+            todo = {
+                id: todoID,
+                account_id,
+                email,
+                body: text,
+                completed
+            }
+
+        } catch(err) {
+            error = new Error(`Couldn't create todo for user ${email}`, 
+            {cause: err})
+            console.log(err)
+        }
+
+        return { todo, error }
     }
 
     async getTodos(body) {
-        if (!this.connected) {
-            this.client.connect()
-            this.connected = true
-        }
-
         const { email } = body
-
         const fetchIDQuery = {
             text: 'SELECT * FROM accounts WHERE email = $1',
             values: [email]
         }
-        const data = await this.client.query(fetchIDQuery);
-        const account_id = data.rows[0].id
-        
+
+        var error
+        var account_id
+        try {
+            const data = await this.client.query(fetchIDQuery);
+            console.log(data)
+            account_id = data.rows[0].id 
+
+        } catch(err) {
+            error = new Error(`Couldn't retrieve todos for account ${email}`,
+            { cause: err })
+            console.log(err)
+            return { todos: [] , error}
+        }
         const query = {
             text: 'SELECT (body) FROM todos WHERE account_id = $1',
             values: [account_id]
         }
-
-        const res = await this.client.query(query);
-        console.log(res.rows)
-        const todos = []
-        for (var i = 0; i < res.rows.length; i++) {
-            todos.push(res.rows[i].body)
-
+        var todos = []
+        try {
+            const res = await this.client.query(query);
+            for (var i = 0; i < res.rows.length; i++) {
+                todos.push(res.rows[i].body)
+            }
+        } catch(err) {
+            error = new Error(`Couldn't retrieve todos for account ${email}`, 
+            { cause: err })
+            console.log(err)
         }
-        return todos
 
-
-
-
-
-
+        return { todos,  error }
     }
 
     async completeTodo(body) {
-        if (!this.connected) {
-            this.client.connect()
-            this.connected = true
-        }
-        const { email } = body
-
-        const fetchIDQuery = {
-            text: 'SELECT * FROM accounts WHERE email = $1',
-            values: [email]
-        }
-        const data = await this.client.query(fetchIDQuery);
         const { completed, id } = body
         const query = {
-            text: 'UPDATE todos SET completed = $1 WHERE id = $2',
+            text: 'UPDATE todos SET completed = $1 WHERE id = $2 RETURNING *',
             values: [completed, id]
         }
-
-        const res = await this.client.query(query)
-        return res.rows[0]
+        var todo
+        var error
+        try {
+            const data = await this.client.query(query)
+            console.log(data)
+            todo = data.rows[0]
+        }catch(err) {
+            error = new Error(`Could not complete todo for todo with id: ${id}`,
+            { cause: err })
+            console.log(err)
+        }
+        return { todo, error}
     }
 }
 

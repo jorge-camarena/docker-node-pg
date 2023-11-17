@@ -9,24 +9,33 @@ class GetRouter {
 
     initRoutes() {
         this.router.get('/get-account', async (req, res) => {
-            console.log(req.query);
-            const account = await this.database.getAccount(req.query);
-
-            res.json({
-                account,
-                message: `Successfully retrieved account`
-            })
+            const { account, error } = await this.database.getAccount(req.query);
+            if (error) {
+                res.status(404).json({
+                    account,
+                    message: error.cause
+                })
+            } else {
+                res.status(200).json({
+                    account,
+                    message: `Successfully retrieved account`
+                })
+            }
         })
 
         this.router.get('/get-todos', async (req, res) => {
-            const todos = await this.database.getTodos(req.query);
-            console.log(todos)
-
-            res.json({
-                todos: todos,
-                message: `Successfully retrieved Todos from user ${req.query.email}`
-            })
-
+            const { todos, error } = await this.database.getTodos(req.query);
+            if (error) {
+                res.status(404).json({
+                    todos,
+                    message: error.message
+                })
+            } else {
+                res.status(200).json({
+                    todos,
+                    message: `Successfully retrieved todo list for user ${req.query.email}`
+                })
+            }
         })
     }
 }

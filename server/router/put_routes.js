@@ -9,11 +9,18 @@ class PutRouter {
 
     initRoutes() {
         this.router.put('/complete-todo', async (req, res) => {
-            const completed = await this.database.completeTodo(req.body);
-            res.json({
-                completed,
-                message: `Successfully completed this To-do`
-            })
+            const { todo, error } = await this.database.completeTodo(req.body);
+            if (error) {
+                res.status(404).json({
+                    todo,
+                    message: error.message
+                })
+            } else {
+                res.status(200).json({
+                    todo,
+                    message: `Successfully completed this To-do`
+                })
+            } 
         })
     }
 }

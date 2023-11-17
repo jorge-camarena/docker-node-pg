@@ -1,0 +1,21 @@
+version: "2.23"
+
+services:
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_USER: root
+      POSTGRES_DB: node_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+    hostname: postgres
+
+  api:
+    build: ./server
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+

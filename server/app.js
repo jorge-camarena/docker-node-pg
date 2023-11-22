@@ -5,6 +5,7 @@ const MyDatabase  = require('./db/database.js')
 const GetRouter = require('./router/get_routes.js')
 const PostRouter = require("./router/post_routes.js")
 const PutRouter = require("./router/put_routes.js")
+const DeleteRouter = require("./router/delete_routes.js")
 require('dotenv').config();
 
 
@@ -20,15 +21,18 @@ myDatabase.connect()
 const getRouter = new GetRouter(myDatabase)
 const postRouter = new PostRouter(myDatabase)
 const putRouter = new PutRouter(myDatabase)
+const deleteRouter = new DeleteRouter(myDatabase)
 getRouter.initRoutes()
 postRouter.initRoutes()
 putRouter.initRoutes()
+deleteRouter.initRoutes()
 
 //Initializing all middleware
 app.use(express.json())
 app.use("/api", getRouter.router)
 app.use("/api", postRouter.router)
 app.use("/api", putRouter.router)
+app.use("/api", deleteRouter.Router())
 
 //Setting up networking port
 const PORT = process.env.port || 8080

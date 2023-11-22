@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "test": "mocha",
+    "test2": "node ./test/create_account_test"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "mocha": "^10.2.0",
     "nodemon": "^3.0.1"
   }
 }
